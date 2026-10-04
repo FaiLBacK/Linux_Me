@@ -1,0 +1,45 @@
+[Unit]
+Description=Backup daemon (регулярное резервное копирование каталога)
+Documentation=file:///opt/backupd/README.md
+After=local-fs.target
+ConditionPathExists=/etc/backupd/backupd.conf
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/backupd/backupd.py --foreground --config /etc/backupd/backupd.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+RuntimeDirectory=backupd
+StateDirectory=backupd
+StateDirectoryMode=0755
+UMask=0077
+
+# Минимальная нагрузка на систему
+Nice=10
+IOSchedulingClass=idle
+CPUSchedulingPolicy=idle
+
+# Ограничение возможностей процесса
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_DAC_READ_SEARCH
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+# Единственное место, куда разрешена запись (кроме /run/backupd и /var/lib/backupd).
+# Должно совпадать с destination в конфигурации.
+ReadWritePaths=/var/backups/backupd
+
+[Install]
+WantedBy=multi-user.target
